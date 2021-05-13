@@ -1,4 +1,4 @@
-package org.ricebin.sstable.api;
+package org.ricebin.sstable;
 
 public interface Table {
 

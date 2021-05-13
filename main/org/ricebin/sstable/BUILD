@@ -6,5 +6,6 @@ java_library(
         "Table.java",
     ],
     deps = [
+        "//main/org/ricebin/slice",
     ]
 )
