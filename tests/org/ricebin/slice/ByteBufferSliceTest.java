@@ -2,7 +2,9 @@ package org.ricebin.slice;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.base.Charsets;
 import com.google.common.truth.Truth;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -158,4 +160,21 @@ public class ByteBufferSliceTest {
     }
   }
 
+  @Test
+  public void testHappy() {
+    assertThat(compare("a", "a")).isEqualTo(0);
+    assertThat(compare("a", "ab")).isLessThan(0);
+    assertThat(compare("ab", "a")).isGreaterThan(0);
+    assertThat(compare("ab", "bc")).isLessThan(0);
+    assertThat(compare("bc", "ab")).isGreaterThan(0);
+  }
+
+  private static int compare(String a, String b) {
+    return newSlice(a).compareTo(newSlice(b));
+  }
+
+  static ByteBufferSlice newSlice(String input) {
+    byte[] bytes = input.getBytes(Charsets.UTF_8);
+    return ByteBufferSlice.create(bytes);
+  }
 }
