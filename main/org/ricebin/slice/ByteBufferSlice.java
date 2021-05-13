@@ -193,21 +193,24 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
   }
 
-  public static final ByteBufferSlice EMPTY = new ByteBufferSlice(allocate(0), 0, 0);
 
-  public static ByteBufferSlice create(byte[] buf) {
+  static ByteBufferSlice create(byte[] buf) {
     return new ByteBufferSlice(ByteBuffer.wrap(buf), 0, buf.length);
   }
 
-  public static ByteBufferSlice create(byte[] buf, int length) {
-    return new ByteBufferSlice(ByteBuffer.wrap(buf), 0, length);
+  static ByteBufferSlice create(byte[] buf, int offset, int length) {
+    return new ByteBufferSlice(ByteBuffer.wrap(buf), offset, length);
   }
 
   public static ByteBufferSlice wrap(ByteBuffer buf) {
     return new ByteBufferSlice(buf, 0, buf.limit());
   }
 
+
+  private static final ByteBufferSlice EMPTY = new ByteBufferSlice(allocate(0), 0, 0);
+
   public static final Factory FACTORY = new Factory() {
+
     @Override
     public ByteBufferSlice readFully(FileChannel src, long pos, int len) throws IOException {
       ByteBuffer buf = allocate(len);
@@ -227,6 +230,16 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     @Override
     public ReusableSink newDynamicSink(int initialSize) {
       return new DynamicReusableSinkImpl(initialSize);
+    }
+
+    @Override
+    public ByteBufferSlice wrap(byte[] buf, int offset, int len) {
+      return ByteBufferSlice.create(buf, offset, len);
+    }
+
+    @Override
+    public ByteBufferSlice empty() {
+      return EMPTY;
     }
   };
 

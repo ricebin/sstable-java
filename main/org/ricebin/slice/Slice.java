@@ -70,6 +70,10 @@ public interface Slice {
 
     ReusableSink newDynamicSink(int initialSize);
 
+    Slice wrap(byte[] buf, int offset, int len);
+
+    ByteBufferSlice empty();
+
     interface Sink {
 
       int position();
