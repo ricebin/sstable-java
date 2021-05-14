@@ -2,28 +2,33 @@ package org.ricebin.sstable;
 
 import com.google.common.collect.Iterators;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import org.ricebin.slice.Slice;
 
-class TwoLevelBlock<V> {
+class TwoLevelBlock<F, T> implements Block<T> {
 
-  final PrefixBlock<V> blockIndex;
-  private final Function<V, PrefixBlock<Slice>> getBlock;
+  final Block<F> blockIndex;
+  private final Function<F, Block<T>> getBlock;
 
-  TwoLevelBlock(PrefixBlock<V> blockIndex, Function<V, PrefixBlock<Slice>> getBlock) {
+  TwoLevelBlock(Block<F> blockIndex, Function<F, Block<T>> getBlock) {
     this.blockIndex = blockIndex;
     this.getBlock = getBlock;
   }
 
-  Iterator<PrefixBlock<Slice>> iterator() {
-    return Iterators.transform(
-        blockIndex.iterator(),
-        e -> getBlock.apply(e.getValue()));
+  @Override
+  public Iterator<Entry<Slice, T>> iterator() {
+    return Iterators.concat(
+        Iterators.transform(
+            blockIndex.iterator(),
+            e -> getBlock.apply(e.getValue()).iterator()));
   }
 
-  Iterator<PrefixBlock<Slice>> iterator(Slice key) {
-    return Iterators.transform(
-        blockIndex.iterator(key),
-        e -> getBlock.apply(e.getValue()));
+  @Override
+  public Iterator<Entry<Slice, T>> iterator(Slice lowerBound) {
+    return Iterators.concat(
+        Iterators.transform(
+            blockIndex.iterator(lowerBound),
+            e -> getBlock.apply(e.getValue()).iterator(lowerBound)));
   }
 }

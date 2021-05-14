@@ -18,7 +18,7 @@ import org.ricebin.slice.Slice.Reader;
  * document format
  */
 // https://github.com/google/leveldb/blob/f57513a1d6c99636fc5b710150d0b93713af4e43/doc/table_format.md
-class PrefixBlock<V> {
+class PrefixBlock<V> implements Block<V> {
 
   private final Slice data;
   private final Comparator<Slice> keyComparator;

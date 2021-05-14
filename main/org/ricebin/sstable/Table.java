@@ -14,27 +14,19 @@ import org.ricebin.slice.Slice;
 public class Table {
 
   private final Slice.Factory sliceFactory;
-  final TwoLevelBlock<BlockHandle> index;
+  final Block<Slice> index;
 
-  Table(Slice.Factory sliceFactory, TwoLevelBlock index) {
+  Table(Slice.Factory sliceFactory, Block<Slice> index) {
     this.sliceFactory = sliceFactory;
     this.index = index;
   }
 
   public Iterator<Entry<Slice, Slice>> iterator(Slice key) {
-    return Iterators.concat(
-        Iterators.transform(
-            index.iterator(key),
-            b -> b.iterator(key)));
-  }
-
-  public Iterator<PrefixBlock<Slice>> blockIterator(Slice key) {
     return index.iterator(key);
   }
 
   public Iterator<Map.Entry<Slice, Slice>> iterator() {
-    return Iterators.concat(
-        Iterators.transform(index.iterator(), PrefixBlock::iterator));
+    return index.iterator();
   }
 
   public static Table open(
