@@ -5,12 +5,12 @@ import java.util.Iterator;
 import java.util.function.Function;
 import org.ricebin.slice.Slice;
 
-class PrefixBlockIndex {
+class TwoLevelBlock<V> {
 
-  final PrefixBlock<BlockHandle> blockIndex;
-  private final Function<BlockHandle, PrefixBlock<Slice>> getBlock;
+  final PrefixBlock<V> blockIndex;
+  private final Function<V, PrefixBlock<Slice>> getBlock;
 
-  PrefixBlockIndex(PrefixBlock<BlockHandle> blockIndex, Function<BlockHandle, PrefixBlock<Slice>> getBlock) {
+  TwoLevelBlock(PrefixBlock<V> blockIndex, Function<V, PrefixBlock<Slice>> getBlock) {
     this.blockIndex = blockIndex;
     this.getBlock = getBlock;
   }

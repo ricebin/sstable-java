@@ -14,9 +14,9 @@ import org.ricebin.slice.Slice;
 public class Table {
 
   private final Slice.Factory sliceFactory;
-  final PrefixBlockIndex index;
+  final TwoLevelBlock<BlockHandle> index;
 
-  Table(Slice.Factory sliceFactory, PrefixBlockIndex index) {
+  Table(Slice.Factory sliceFactory, TwoLevelBlock index) {
     this.sliceFactory = sliceFactory;
     this.index = index;
   }
@@ -50,14 +50,14 @@ public class Table {
     // PrefixBlock metaIndex = readBlock(sliceFactory, fileChannel, footer.getMetaIndex(), keyComparator);
     return new Table(
         sliceFactory,
-        new PrefixBlockIndex(blockIndex,
-        blockHandle -> {
-          try {
-            return readBlock(sliceFactory, fileChannel, blockHandle, keyComparator, s -> s);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }));
+        new TwoLevelBlock<>(blockIndex,
+            blockHandle -> {
+              try {
+                return readBlock(sliceFactory, fileChannel, blockHandle, keyComparator, s -> s);
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            }));
   }
 
   static <V> PrefixBlock<V> readBlock(
