@@ -33,10 +33,12 @@ class PrefixBlock<V> implements Block<V> {
     this.valueDecoder = valueDecoder;
   }
 
+  @Override
   public Iterator<Entry<Slice, V>> iterator() {
     return iterator(0);
   }
 
+  @Override
   public Iterator<Entry<Slice, V>> iterator(Slice lowerBound) {
     int restartOffset = searchRestarts(lowerBound);
 
