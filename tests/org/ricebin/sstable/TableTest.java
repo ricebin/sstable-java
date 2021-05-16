@@ -16,13 +16,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.ricebin.slice.ByteBufferSlice;
-import org.ricebin.slice.BytewiseSliceComparator;
 import org.ricebin.slice.Slice;
 
 public class TableTest {
 
   private static final Slice.Factory SLICE_FACTORY = ByteBufferSlice.FACTORY;
-  private static final BytewiseSliceComparator KEY_COMPARATOR = BytewiseSliceComparator.INSTANCE;
 
   @Rule
   public final TemporaryFolder tempDir = new TemporaryFolder();
@@ -59,7 +57,7 @@ public class TableTest {
 
   private Table readTable(File file) throws IOException {
     RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
-    return Table.open(randomAccessFile.getChannel(), KEY_COMPARATOR, SLICE_FACTORY);
+    return Table.open(randomAccessFile.getChannel(), SLICE_FACTORY);
   }
 
   private File writeTable(ImmutableMap<String, String> input) throws IOException {
@@ -69,7 +67,7 @@ public class TableTest {
     FileChannel fc = randomAccessFile.getChannel();
 
     TableBuilder builder =
-        new TableBuilder(SLICE_FACTORY, fc, KEY_COMPARATOR, CompressionType.NONE);
+        new TableBuilder(SLICE_FACTORY, fc, CompressionType.NONE);
 
     for (Map.Entry<String, String> entry : input.entrySet()) {
       builder.add(newSlice(entry.getKey()), newSlice(entry.getValue()));

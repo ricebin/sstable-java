@@ -5,7 +5,6 @@ java_library(
     srcs = [
         "Slice.java",
         "ByteBufferSlice.java",
-        "BytewiseSliceComparator.java",
     ],
     deps = [
     ]

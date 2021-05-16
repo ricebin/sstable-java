@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.ricebin.slice.Slice.Factory.ReusableSink;
 import org.ricebin.slice.Slice.Factory.Sink;
@@ -209,7 +210,7 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
 
   private static final ByteBufferSlice EMPTY = new ByteBufferSlice(allocate(0), 0, 0);
 
-  public static final Factory FACTORY = new Factory() {
+  public static final Factory FACTORY = new Factory<ByteBufferSlice>() {
 
     @Override
     public ByteBufferSlice readFully(FileChannel src, long pos, int len) throws IOException {
@@ -223,12 +224,12 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
 
     @Override
-    public Sink newFixedSizeSink(int size) {
+    public Sink<ByteBufferSlice> newFixedSizeSink(int size) {
       return new SinkImpl(size);
     }
 
     @Override
-    public ReusableSink newDynamicSink(int initialSize) {
+    public ReusableSink<ByteBufferSlice> newDynamicSink(int initialSize) {
       return new DynamicReusableSinkImpl(initialSize);
     }
 
@@ -240,6 +241,11 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     @Override
     public ByteBufferSlice empty() {
       return EMPTY;
+    }
+
+    @Override
+    public Comparator<ByteBufferSlice> comparator() {
+      return Comparator.naturalOrder();
     }
   };
 

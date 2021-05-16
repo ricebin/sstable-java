@@ -15,7 +15,6 @@ public class TableBuilder {
 
   private final Slice.Factory sliceFactory;
   private final FileChannel fileChannel;
-  private final Comparator<Slice> keyComparator;
   private final CompressionType compressionType;
 
   private final PrefixBlockBuilder dataBlockBuilder;
@@ -27,21 +26,20 @@ public class TableBuilder {
   private BlockHandle pendingIndexEntry = null;
 
   TableBuilder(Slice.Factory sliceFactory,
-      FileChannel fileChannel, Comparator<Slice> keyComparator, CompressionType compressionType) {
+      FileChannel fileChannel, CompressionType compressionType) {
     checkArgument(compressionType == CompressionType.NONE);
     this.sliceFactory = sliceFactory;
     this.fileChannel = fileChannel;
-    this.keyComparator = keyComparator;
     this.compressionType = compressionType;
     this.prevKey = sliceFactory.empty();
 
-    this.dataBlockBuilder = new PrefixBlockBuilder(sliceFactory, keyComparator);
-    this.indexBlockBuilder = new PrefixBlockBuilder(sliceFactory, keyComparator);
+    this.dataBlockBuilder = new PrefixBlockBuilder(sliceFactory);
+    this.indexBlockBuilder = new PrefixBlockBuilder(sliceFactory);
   }
 
   public void add(Slice key, Slice value) throws IOException {
     // do not allow duplicate key
-    checkState(keyComparator.compare(key, prevKey) > 0);
+    checkState(sliceFactory.comparator().compare(key, prevKey) > 0);
 
     if (pendingIndexEntry != null) {
       checkState(dataBlockBuilder.isEmpty());
@@ -107,7 +105,7 @@ public class TableBuilder {
 
     // write meta index block
     // TODO(ricebin): actually write something here
-    BlockBuilder metaIndexBlockBuilder = new PrefixBlockBuilder(sliceFactory, keyComparator);
+    BlockBuilder metaIndexBlockBuilder = new PrefixBlockBuilder(sliceFactory);
     // TODO(postrelease): Add stats and other meta blocks
     BlockHandle metaIndexBlockHandle = writeBlock(metaIndexBlockBuilder);
 

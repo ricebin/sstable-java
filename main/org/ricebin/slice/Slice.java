@@ -4,6 +4,7 @@ package org.ricebin.slice;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Comparator;
 
 // https://github.com/google/leveldb/blob/master/include/leveldb/slice.h
 public interface Slice {
@@ -62,40 +63,42 @@ public interface Slice {
     void write(FileChannel dst) throws IOException;
   }
 
-  interface Factory {
+  interface Factory<T extends Slice> {
 
-    Slice readFully(FileChannel src, long pos, int len) throws IOException;
+    T readFully(FileChannel src, long pos, int len) throws IOException;
 
-    Sink newFixedSizeSink(int size);
+    Sink<T> newFixedSizeSink(int size);
 
-    ReusableSink newDynamicSink(int initialSize);
+    ReusableSink<T> newDynamicSink(int initialSize);
 
-    Slice wrap(byte[] buf, int offset, int len);
+    T wrap(byte[] buf, int offset, int len);
 
     ByteBufferSlice empty();
 
-    interface Sink {
+    Comparator<T> comparator();
+
+    interface Sink<T extends Slice> {
 
       int position();
 
-      Sink putByte(byte value);
+      Sink<T> putByte(byte value);
 
-      Sink putInt(int value);
+      Sink<T> putInt(int value);
 
-      Sink putVarInt(int value);
+      Sink<T> putVarInt(int value);
 
-      Sink putLong(long value);
+      Sink<T> putLong(long value);
 
-      Sink putVarLong(long value);
+      Sink<T> putVarLong(long value);
 
-      Sink putSlice(Slice slice);
+      Sink<T> putSlice(Slice slice);
 
-      Slice finish();
+      T finish();
 
       int currentSize();
     }
 
-    interface ReusableSink extends Sink {
+    interface ReusableSink<T extends Slice> extends Sink<T> {
       void reset();
     }
   }

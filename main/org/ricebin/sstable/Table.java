@@ -13,10 +13,12 @@ import org.ricebin.slice.Slice;
 
 public class Table {
 
+  private final FileChannel fileChannel;
   private final Slice.Factory sliceFactory;
   final Block<Slice> index;
 
-  Table(Slice.Factory sliceFactory, Block<Slice> index) {
+  Table(FileChannel fileChannel, Slice.Factory sliceFactory, Block<Slice> index) {
+    this.fileChannel = fileChannel;
     this.sliceFactory = sliceFactory;
     this.index = index;
   }
@@ -30,7 +32,8 @@ public class Table {
   }
 
   public static Table open(
-      FileChannel fileChannel, Comparator<Slice> keyComparator, Slice.Factory sliceFactory) throws IOException {
+      FileChannel fileChannel, Slice.Factory sliceFactory) throws IOException {
+    Comparator<Slice> keyComparator = sliceFactory.comparator();
     Footer footer = readFooter(sliceFactory, fileChannel);
 
     PrefixBlock<BlockHandle> blockIndex = readBlock(
@@ -41,6 +44,7 @@ public class Table {
     // TODO(ricebin): impl metaIndex
     // PrefixBlock metaIndex = readBlock(sliceFactory, fileChannel, footer.getMetaIndex(), keyComparator);
     return new Table(
+        fileChannel,
         sliceFactory,
         new TwoLevelBlock<>(blockIndex,
             blockHandle -> {
@@ -74,4 +78,7 @@ public class Table {
     return Footer.decode(slice);
   }
 
+  public void close() throws IOException {
+    fileChannel.close();
+  }
 }

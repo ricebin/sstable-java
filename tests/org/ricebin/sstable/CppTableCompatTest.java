@@ -15,7 +15,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.ricebin.slice.ByteBufferSlice;
-import org.ricebin.slice.BytewiseSliceComparator;
 import org.ricebin.slice.Slice;
 
 public class CppTableCompatTest {
@@ -32,7 +31,7 @@ public class CppTableCompatTest {
         "tests/org/ricebin/sstable/testfiles/000005.sst", "r");
     FileChannel fc = file.getChannel();
 
-    Table table = Table.open(fc, BytewiseSliceComparator.INSTANCE, ByteBufferSlice.FACTORY);
+    Table table = Table.open(fc, ByteBufferSlice.FACTORY);
     {
       Iterator<Entry<Slice, Slice>> it = table.iterator();
       assertThat(it.hasNext()).isTrue();

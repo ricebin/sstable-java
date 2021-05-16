@@ -21,7 +21,6 @@ class PrefixBlockBuilder implements BlockBuilder {
   static final int BLOCK_SIZE = 4 * 1024;
 
   private final Slice.Factory sliceFactory;
-  private final Comparator<Slice> keyComparator;
 
   // TODO(ricebin): use fastutil or roll custom
   private final List<Integer> restarts;
@@ -31,9 +30,8 @@ class PrefixBlockBuilder implements BlockBuilder {
   private Slice prevKey;
   private int restartCounter = 0;
 
-  PrefixBlockBuilder(Slice.Factory sliceFactory, Comparator<Slice> keyComparator) {
+  PrefixBlockBuilder(Slice.Factory sliceFactory) {
     this.sliceFactory = sliceFactory;
-    this.keyComparator = keyComparator;
     this.prevKey = sliceFactory.empty();
 
     this.blockBuf = sliceFactory.newDynamicSink(BLOCK_SIZE);
@@ -45,7 +43,7 @@ class PrefixBlockBuilder implements BlockBuilder {
   @Override
   public void add(Slice key, Slice value) {
     // do not allow duplicate key
-    checkArgument(keyComparator.compare(key, prevKey) > 0);
+    checkArgument(sliceFactory.comparator().compare(key, prevKey) > 0);
 
     final int sharedKeySize;
     if (restartCounter < RESTART_INTERVAL) {
