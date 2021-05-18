@@ -4,18 +4,20 @@ import org.ricebin.slice.Slice;
 
 public class BloomFilterPolicy implements FilterPolicy {
 
-  // https://github.com/google/leveldb/blob/master/util/bloom.cc#L26
   public static final String NAME = "leveldb.BuiltinBloomFilter2";
 
-  public static final BloomFilterPolicy INSTANCE = new BloomFilterPolicy();
+  // https://github.com/google/leveldb/blob/master/util/bloom.cc#L26
+  public static final BloomFilterPolicy LEVELDB_BUILTIN_BLOOM_FILTER2 =
+      new BloomFilterPolicy("leveldb.BuiltinBloomFilter2", 0xbc9f1d34);
 
+  private class ReaderImpl implements Reader {
 
-  private static final FilterPolicy.Reader READER = new Reader() {
     @Override
     public String name() {
-      return NAME;
+      return name;
     }
 
+    // https://github.com/google/leveldb/blob/f57513a1d6c99636fc5b710150d0b93713af4e43/util/bloom.cc#L56
     @Override
     public boolean keyMayMatch(Slice key, Slice filter) {
       int len = filter.len();
@@ -34,7 +36,7 @@ public class BloomFilterPolicy implements FilterPolicy {
         return true;
       }
 
-      long h = bloomHash(key);
+      long h = bloomHash(key, seed);
       long delta = (h >>> 17) | (h << 15);  // Rotate right 17 bits
       for (int j = 0; j < k; j++) {
         int bitpos = (int) (h % bits);
@@ -45,20 +47,26 @@ public class BloomFilterPolicy implements FilterPolicy {
       }
       return true;
     }
-  };
-
-  static long bloomHash(Slice input) {
-    return toLong(Hash.hash(input, 0xbc9f1d34));
   }
 
-  private static long toLong(int h) {
+  static long bloomHash(Slice input, int seed) {
+    return toUnsigned(Hash.hash(input, seed));
+  }
+
+  private static long toUnsigned(int h) {
     return h & 0xffffffffL;
   }
 
-  private BloomFilterPolicy() {}
+  private final String name;
+  private final int seed;
+
+  private BloomFilterPolicy(String name, int seed) {
+    this.name = name;
+    this.seed = seed;
+  }
 
   @Override
   public Reader getReader() {
-    return READER;
+    return new ReaderImpl();
   }
 }
