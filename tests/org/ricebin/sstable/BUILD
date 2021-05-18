@@ -42,3 +42,16 @@ java_test(
         "@maven//:com_google_truth_truth_1_1_2",
     ]
 )
+
+java_test(
+    name = "BloomFilterPolicyTest",
+    srcs = [
+        "BloomFilterPolicyTest.java",
+    ],
+    test_class = "org.ricebin.sstable.BloomFilterPolicyTest",
+    deps = [
+        "//main/org/ricebin/slice",
+        "//main/org/ricebin/sstable",
+        "@maven//:com_google_truth_truth_1_1_2",
+    ]
+)

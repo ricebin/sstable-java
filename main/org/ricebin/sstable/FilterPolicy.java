@@ -1,10 +1,16 @@
 package org.ricebin.sstable;
 
+import java.util.Collection;
 import org.ricebin.slice.Slice;
 
 public interface FilterPolicy {
 
-  // TODO(ricebin): writer
+  interface Writer {
+
+    String name();
+
+    byte[] createFilter(Collection<Slice> keys);
+  }
 
   interface Reader {
 
@@ -13,5 +19,4 @@ public interface FilterPolicy {
     boolean keyMayMatch(Slice key, Slice filter);
   }
 
-  Reader getReader();
 }

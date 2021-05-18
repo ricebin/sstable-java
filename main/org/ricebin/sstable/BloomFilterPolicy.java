@@ -1,10 +1,9 @@
 package org.ricebin.sstable;
 
+import java.util.Collection;
 import org.ricebin.slice.Slice;
 
 public class BloomFilterPolicy implements FilterPolicy {
-
-  public static final String NAME = "leveldb.BuiltinBloomFilter2";
 
   // https://github.com/google/leveldb/blob/master/util/bloom.cc#L26
   public static final BloomFilterPolicy LEVELDB_BUILTIN_BLOOM_FILTER2 =
@@ -49,6 +48,61 @@ public class BloomFilterPolicy implements FilterPolicy {
     }
   }
 
+  private class WriterImpl implements Writer {
+
+    private final int bitsPerKey;
+    private final int k;
+
+    private WriterImpl(int bitsPerKey) {
+      // We intentionally round down to reduce probing cost a little bit
+      this.bitsPerKey = bitsPerKey;
+      int k = (int) (bitsPerKey * 0.69);
+      if (k < 1) {
+        k = 1;
+      } else if (k > 30) {
+        k = 30;
+      }
+      this.k = k;
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public byte[] createFilter(Collection<Slice> keys) {
+      // Compute bloom filter size (in both bits and bytes)
+      int bits = keys.size() * bitsPerKey;
+
+      // For small n, we can see a very high false positive rate.  Fix it
+      // by enforcing a minimum bloom filter length.
+      if (bits < 64) {
+        bits = 64;
+      }
+
+      int bytes = (bits + 7) / 8;
+      bits = bytes * 8;
+
+      final byte[] array = new byte[bytes + 1];
+      array[array.length - 1] = (byte) k; // Remember # of probes in filter
+
+      for (Slice key : keys) {
+        // Use double-hashing to generate a sequence of hash values.
+        // See analysis in [Kirsch,Mitzenmacher 2006].
+        long h = bloomHash(key, seed);
+        long delta = (h >>> 17) | (h << 15);  // Rotate right 17 bits
+        for (int j = 0; j < k; j++) {
+          int bitpos = (int) (h % bits);
+          int i = bitpos / 8;
+          array[i] |= (1 << (bitpos % 8));
+          h += delta;
+        }
+      }
+      return array;
+    }
+  }
+
   static long bloomHash(Slice input, int seed) {
     return toUnsigned(Hash.hash(input, seed));
   }
@@ -65,8 +119,11 @@ public class BloomFilterPolicy implements FilterPolicy {
     this.seed = seed;
   }
 
-  @Override
   public Reader getReader() {
     return new ReaderImpl();
+  }
+
+  public Writer getWriter(int bitsPerKey) {
+    return new WriterImpl(bitsPerKey);
   }
 }
