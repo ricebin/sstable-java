@@ -28,3 +28,16 @@ java_test(
         "@maven//:com_google_truth_truth_1_1_2",
     ]
 )
+
+java_test(
+    name = "HashTest",
+    srcs = [
+        "HashTest.java",
+    ],
+    test_class = "org.ricebin.sstable.HashTest",
+    deps = [
+        "//main/org/ricebin/slice",
+        "//main/org/ricebin/sstable",
+        "@maven//:com_google_truth_truth_1_1_2",
+    ]
+)
