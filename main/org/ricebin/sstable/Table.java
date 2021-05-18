@@ -136,7 +136,6 @@ public class Table {
 
       BlockHandle filterBlockHandle = BlockHandle.decode(data.newReader());
 
-
       Slice filterBlockData = sliceFactory
           .readFully(fileChannel, filterBlockHandle.getOffset(), filterBlockHandle.getSize());
 
@@ -147,16 +146,18 @@ public class Table {
 
   static <V> PrefixBlock<V> readBlock(
       Slice.Factory sliceFactory, FileChannel fileChannel, BlockHandle blockHandle,
-      Function<Slice, V> valueDecoder) throws IOException{
+      Function<Slice, V> valueDecoder) throws IOException {
 
     // read block trailer
     long trailerStart = blockHandle.getOffset() + blockHandle.getSize();
-    Slice trailerSlice = sliceFactory.readFully(fileChannel, trailerStart, BlockTrailer.MAX_ENCODED_LENGTH);
+    Slice trailerSlice = sliceFactory
+        .readFully(fileChannel, trailerStart, BlockTrailer.MAX_ENCODED_LENGTH);
 
     BlockTrailer trailer = BlockTrailer.decode(trailerSlice);
     // TODO(ricebin): verify checksum from trailer
 
-    Slice dataSlice = sliceFactory.readFully(fileChannel, blockHandle.getOffset(), blockHandle.getSize());
+    Slice dataSlice = sliceFactory
+        .readFully(fileChannel, blockHandle.getOffset(), blockHandle.getSize());
     return new PrefixBlock<V>(sliceFactory, dataSlice, sliceFactory.comparator(), valueDecoder);
   }
 

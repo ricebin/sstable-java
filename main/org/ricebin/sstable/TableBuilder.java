@@ -5,10 +5,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.ricebin.slice.Slice;
-import org.ricebin.slice.Slice.Factory;
 
 public class TableBuilder {
 

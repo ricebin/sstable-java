@@ -32,7 +32,7 @@ public class CppTableCompatTest {
     Table table = Table.open(BloomFilterPolicy.READER, fc, ByteBufferSlice.FACTORY);
 
     assertThat(getBytes(table.filterBlock.blockContent))
-        .isEqualTo(new byte[] {0, 8, 64, 2, 16, 0, 4, 32, 6, 0, 0, 0, 0, 9, 0, 0, 0, 11});
+        .isEqualTo(new byte[]{0, 8, 64, 2, 16, 0, 4, 32, 6, 0, 0, 0, 0, 9, 0, 0, 0, 11});
 
     assertThat(table.mayExists(newSlice("key1"))).isTrue();
     assertThat(getBytes(table.get(newSlice("key1")))).isEqualTo("value2".getBytes());
@@ -49,8 +49,12 @@ public class CppTableCompatTest {
 
   @Test
   public void testHappy() throws IOException {
-    Slice firstKey = newSlice(new byte[] {48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 1, 1, 0, 0, 0, 0, 0, 0});
-    Slice midKey = newSlice(new byte[] {48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 52, 50, 1, 43, 0, 0, 0, 0, 0, 0});
+    Slice firstKey = newSlice(
+        new byte[]{48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 1, 1, 0, 0, 0, 0,
+            0, 0});
+    Slice midKey = newSlice(
+        new byte[]{48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 52, 50, 1, 43, 0, 0, 0,
+            0, 0, 0});
 
     RandomAccessFile file = new RandomAccessFile(
         "tests/org/ricebin/sstable/testfiles/000005.sst", "r");
@@ -60,13 +64,13 @@ public class CppTableCompatTest {
     {
       Iterator<Entry<Slice, Slice>> it = table.iterator();
       assertThat(it.hasNext()).isTrue();
-      assertThat(equals(it.next().getKey(), firstKey)).isTrue();
+      assertThat(getBytes(it.next().getKey())).isEqualTo(getBytes(firstKey));
     }
 
     {
       Iterator<Entry<Slice, Slice>> it = table.iterator(midKey);
       assertThat(it.hasNext()).isTrue();
-      assertThat(equals(it.next().getKey(), midKey)).isTrue();
+      assertThat(getBytes(it.next().getKey())).isEqualTo(getBytes(midKey));
     }
 
     {
@@ -75,7 +79,7 @@ public class CppTableCompatTest {
       Entry<Slice, Slice> nthEntry = getEntry(table, pos);
       {
         Entry<Slice, Slice> entry = getNext(table, nthEntry.getKey());
-        assertThat(equals(entry.getKey(), nthEntry.getKey())).isTrue();
+        assertThat(getBytes(entry.getKey())).isEqualTo(getBytes(nthEntry.getKey()));
       }
     }
   }
@@ -99,9 +103,6 @@ public class CppTableCompatTest {
     return newSlice(v.getBytes(StandardCharsets.UTF_8));
   }
 
-  private static void assertEquals(Slice a, Slice b) {
-    assertThat(equals(a, b)).isTrue();
-  }
 
   private static byte[] getBytes(Slice slice) {
     byte[] sink = new byte[slice.len()];
@@ -109,16 +110,4 @@ public class CppTableCompatTest {
     return sink;
   }
 
-  private static boolean equals(Slice a, Slice b) {
-    if (a.len() != b.len()) {
-      return false;
-    }
-
-    for (int i = 0; i < a.len(); i++) {
-      if (a.getByte(i) != b.getByte(i)) {
-        return false;
-      }
-    }
-    return true;
-  }
 }

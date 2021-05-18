@@ -14,7 +14,6 @@ import org.ricebin.slice.Slice.Factory;
 import org.ricebin.slice.Slice.Reader;
 
 /**
- *
  * document format
  */
 // https://github.com/google/leveldb/blob/f57513a1d6c99636fc5b710150d0b93713af4e43/doc/table_format.md
@@ -125,7 +124,7 @@ class PrefixBlock<V> implements Block<V> {
       }
       int newSize = keyBytes.length;
       while (newSize < targetCapacity) {
-        newSize <<=1;
+        newSize <<= 1;
         // in case of overflow
         Preconditions.checkState(newSize > 0);
       }

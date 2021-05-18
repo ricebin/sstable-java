@@ -99,6 +99,7 @@ public interface Slice {
     }
 
     interface ReusableSink<T extends Slice> extends Sink<T> {
+
       void reset();
     }
   }

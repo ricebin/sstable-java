@@ -1,8 +1,5 @@
 package org.ricebin.sstable;
 
-import com.google.common.hash.Hashing;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import org.ricebin.slice.Slice;
 
 // https://github.com/google/leveldb/blob/master/table/filter_block.cc

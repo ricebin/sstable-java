@@ -4,11 +4,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.ricebin.slice.Slice;
-import org.ricebin.slice.Slice.Factory;
 
 // https://github.com/google/leveldb/blob/master/table/block_builder.cc
 class PrefixBlockBuilder implements BlockBuilder {

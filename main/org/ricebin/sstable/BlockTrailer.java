@@ -5,6 +5,7 @@ import org.ricebin.slice.Slice.Factory.Sink;
 import org.ricebin.slice.Slice.Reader;
 
 class BlockTrailer {
+
   // 1-byte type + 32-bit crc
   // https://github.com/google/leveldb/blob/f57513a1d6c99636fc5b710150d0b93713af4e43/table/format.h#L79
   static final int MAX_ENCODED_LENGTH = 5;

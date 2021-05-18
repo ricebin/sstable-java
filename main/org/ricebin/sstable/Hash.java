@@ -5,6 +5,7 @@ import org.ricebin.slice.Slice.Reader;
 
 // https://github.com/google/leveldb/blob/master/util/hash.cc
 class Hash {
+
   static int hash(Slice slice, int seed) {
     int len = slice.len();
     // Similar to murmur hash

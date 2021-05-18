@@ -28,7 +28,7 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     int minLen = Math.min(len, other.len);
     byte[] a = buf.array();
     byte[] b = other.buf.array();
-    for (int i=0; i<minLen; i++) {
+    for (int i = 0; i < minLen; i++) {
       int v1 = a[offset + i] & 0xFF; // zero extended
       int v2 = b[other.offset + i] & 0xFF; // zero extended
       if (v1 != v2) {
@@ -358,7 +358,8 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
   }
 
-  private static class DynamicReusableSinkImpl extends SinkImpl implements ReusableSink<ByteBufferSlice> {
+  private static class DynamicReusableSinkImpl extends SinkImpl implements
+      ReusableSink<ByteBufferSlice> {
 
     DynamicReusableSinkImpl(int initialSize) {
       super(initialSize);
