@@ -33,7 +33,7 @@ public class RandomGetBenchmark {
       FileChannel fc = file.getChannel();
 
 //      table = Table.open(fc, ByteBufferSlice.FACTORY);
-      table = Table.open(BloomFilterPolicy.READER, fc, ByteBufferSlice.FACTORY);
+      table = Table.open(BloomFilterPolicy.INSTANCE.getReader(), fc, ByteBufferSlice.FACTORY);
     }
 
     @TearDown

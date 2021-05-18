@@ -29,7 +29,7 @@ public class CppTableCompatTest {
         "tests/org/ricebin/sstable/testfiles/testWithFilter.sst", "r");
     FileChannel fc = file.getChannel();
 
-    Table table = Table.open(BloomFilterPolicy.READER, fc, ByteBufferSlice.FACTORY);
+    Table table = Table.open(BloomFilterPolicy.INSTANCE.getReader(), fc, ByteBufferSlice.FACTORY);
 
     assertThat(getBytes(table.filterBlock.blockContent))
         .isEqualTo(new byte[]{0, 8, 64, 2, 16, 0, 4, 32, 6, 0, 0, 0, 0, 9, 0, 0, 0, 11});

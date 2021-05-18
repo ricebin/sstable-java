@@ -8,6 +8,10 @@ public interface FilterPolicy {
 
   interface Reader {
 
+    String name();
+
     boolean keyMayMatch(Slice key, Slice filter);
   }
+
+  Reader getReader();
 }

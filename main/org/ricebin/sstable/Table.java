@@ -133,19 +133,23 @@ public class Table {
         s -> s
     );
 
-    byte[] filterKeyBytes = "filter.".getBytes(StandardCharsets.UTF_8);
+    byte[] filterKeyBytes = ("filter." + filterPolicy.name()).getBytes(StandardCharsets.UTF_8);
+    Slice filterKeySlice = sliceFactory.wrap(filterKeyBytes, 0, filterKeyBytes.length);
+
     Iterator<Entry<Slice, Slice>> entries =
         metaIndex.iterator(sliceFactory.wrap(filterKeyBytes, 0, filterKeyBytes.length));
     if (entries.hasNext()) {
       Entry<Slice, Slice> next = entries.next();
-      Slice data = next.getValue();
+      if (sliceFactory.comparator().compare(filterKeySlice, next.getKey()) == 0) {
+        Slice data = next.getValue();
 
-      BlockHandle filterBlockHandle = BlockHandle.decode(data.newReader());
+        BlockHandle filterBlockHandle = BlockHandle.decode(data.newReader());
 
-      Slice filterBlockData = sliceFactory
-          .readFully(fileChannel, filterBlockHandle.getOffset(), filterBlockHandle.getSize());
+        Slice filterBlockData = sliceFactory
+            .readFully(fileChannel, filterBlockHandle.getOffset(), filterBlockHandle.getSize());
 
-      return FilterBlock.newInstance(filterBlockData, filterPolicy);
+        return FilterBlock.newInstance(filterBlockData, filterPolicy);
+      }
     }
     return null;
   }

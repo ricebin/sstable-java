@@ -1,11 +1,21 @@
 package org.ricebin.sstable;
 
 import org.ricebin.slice.Slice;
-import org.ricebin.sstable.FilterPolicy.Reader;
 
-public class BloomFilterPolicy {
+public class BloomFilterPolicy implements FilterPolicy {
 
-  public static final FilterPolicy.Reader READER = new Reader() {
+  // https://github.com/google/leveldb/blob/master/util/bloom.cc#L26
+  public static final String NAME = "leveldb.BuiltinBloomFilter2";
+
+  public static final BloomFilterPolicy INSTANCE = new BloomFilterPolicy();
+
+
+  private static final FilterPolicy.Reader READER = new Reader() {
+    @Override
+    public String name() {
+      return NAME;
+    }
+
     @Override
     public boolean keyMayMatch(Slice key, Slice filter) {
       int len = filter.len();
@@ -43,5 +53,12 @@ public class BloomFilterPolicy {
 
   private static long toLong(int h) {
     return h & 0xffffffffL;
+  }
+
+  private BloomFilterPolicy() {}
+
+  @Override
+  public Reader getReader() {
+    return READER;
   }
 }
