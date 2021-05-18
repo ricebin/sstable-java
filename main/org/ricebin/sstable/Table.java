@@ -1,5 +1,6 @@
 package org.ricebin.sstable;
 
+import com.google.common.collect.Iterators;
 import com.google.common.primitives.Ints;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -16,8 +17,8 @@ public class Table {
   private final Slice.Factory sliceFactory;
 
   private final Block<BlockHandle> blockIndex;
+  private final Function<BlockHandle, Block<Slice>> getBlock;
   final FilterBlock filterBlock;
-  final Block<Slice> index;
 
   Table(
       FileChannel fileChannel,
@@ -28,15 +29,14 @@ public class Table {
     this.sliceFactory = sliceFactory;
     this.blockIndex = blockIndex;
     this.filterBlock = filterBlock;
-    this.index = new TwoLevelBlock<>(
-        blockIndex,
+    this.getBlock =
         blockHandle -> {
           try {
             return readBlock(sliceFactory, fileChannel, blockHandle, s -> s);
           } catch (IOException e) {
             throw new RuntimeException(e);
           }
-        });
+        };
   }
 
   boolean mayExists(Slice key) {
@@ -73,12 +73,18 @@ public class Table {
     return null;
   }
 
-  public Iterator<Entry<Slice, Slice>> iterator(Slice key) {
-    return index.iterator(key);
+  public Iterator<Entry<Slice, Slice>> iterator(Slice lowerBound) {
+    return Iterators.concat(
+        Iterators.transform(
+            blockIndex.iterator(lowerBound),
+            e -> getBlock.apply(e.getValue()).iterator(lowerBound)));
   }
 
   public Iterator<Map.Entry<Slice, Slice>> iterator() {
-    return index.iterator();
+    return Iterators.concat(
+        Iterators.transform(
+            blockIndex.iterator(),
+            e -> getBlock.apply(e.getValue()).iterator()));
   }
 
   public static Table open(
