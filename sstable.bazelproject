@@ -11,6 +11,10 @@ targets:
   main/...
   tests/...
   benchmark/...
+
+test_sources:
+  tests/*
+
 additional_languages:
   # Uncomment any additional languages you want supported
   # android
