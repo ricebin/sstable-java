@@ -20,6 +20,7 @@ java_test(
     ],
     data = [
         "testfiles/000005.sst",
+        "testfiles/testWithFilter.sst",
     ],
     test_class = "org.ricebin.sstable.CppTableCompatTest",
     deps = [

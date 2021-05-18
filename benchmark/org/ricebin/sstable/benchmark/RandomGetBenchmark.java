@@ -15,6 +15,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.ricebin.slice.ByteBufferSlice;
 import org.ricebin.slice.Slice;
 import org.ricebin.slice.Slice.Factory.Sink;
+import org.ricebin.sstable.BloomFilterPolicy;
 import org.ricebin.sstable.Table;
 
 public class RandomGetBenchmark {
@@ -31,7 +32,8 @@ public class RandomGetBenchmark {
           "benchmark/org/ricebin/sstable/benchmark/testfiles/000005.sst", "r");
       FileChannel fc = file.getChannel();
 
-      table = Table.open(fc, ByteBufferSlice.FACTORY);
+//      table = Table.open(fc, ByteBufferSlice.FACTORY);
+      table = Table.open(BloomFilterPolicy.READER, fc, ByteBufferSlice.FACTORY);
     }
 
     @TearDown
@@ -56,13 +58,18 @@ public class RandomGetBenchmark {
   }
 
   @Benchmark
-  public void testGet(MyState state) {
+  public void testIteratorNext(MyState state) {
     Iterator<Entry<Slice, Slice>> it = state.table.iterator(state.key);
     boolean found = it.hasNext();
     if (found) {
       Entry<Slice, Slice> next = it.next();
     }
 //    System.out.println("found: " + found);
+  }
+
+  @Benchmark
+  public void testGet(MyState state) throws Exception {
+    Slice value = state.table.get(state.key);
   }
 
 }

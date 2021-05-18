@@ -40,11 +40,17 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
 
   @Override
   public byte getByte(int pos) {
+    if (pos < 0) {
+      throw new IllegalArgumentException();
+    }
     return buf.get(offset + pos);
   }
 
   @Override
   public int getUnsignedByte(int pos) {
+    if (pos < 0) {
+      throw new IllegalArgumentException();
+    }
     return buf.get(offset + pos) & 0xff;
   }
 
@@ -55,18 +61,24 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
 
   @Override
   public int getInt(int index) {
+    if (index < 0) {
+      throw new IllegalArgumentException();
+    }
     return buf.getInt(index + offset);
   }
 
   @Override
   public long getLong(int index) {
+    if (index < 0) {
+      throw new IllegalArgumentException();
+    }
     return buf.getLong(index + offset);
   }
 
 
   @Override
   public Slice slice(int index, int length) {
-    if (index + length <= len) {
+    if (index >= 0 && index + length <= len) {
       return new ByteBufferSlice(buf, index + offset, length);
     } else {
       throw new IllegalArgumentException();

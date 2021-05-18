@@ -7,6 +7,7 @@ import com.google.common.collect.Iterators;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,6 +22,30 @@ public class CppTableCompatTest {
 
   @Rule
   public final TemporaryFolder tempDir = new TemporaryFolder();
+
+  @Test
+  public void testWithFilter() throws Exception {
+    RandomAccessFile file = new RandomAccessFile(
+        "tests/org/ricebin/sstable/testfiles/testWithFilter.sst", "r");
+    FileChannel fc = file.getChannel();
+
+    Table table = Table.open(BloomFilterPolicy.READER, fc, ByteBufferSlice.FACTORY);
+
+    assertThat(getBytes(table.filterBlock.blockContent))
+        .isEqualTo(new byte[] {0, 8, 64, 2, 16, 0, 4, 32, 6, 0, 0, 0, 0, 9, 0, 0, 0, 11});
+
+    assertThat(table.mayExists(newSlice("key1"))).isTrue();
+    assertThat(getBytes(table.get(newSlice("key1")))).isEqualTo("value2".getBytes());
+
+    assertThat(table.mayExists(newSlice("key2"))).isTrue();
+    assertThat(table.get(newSlice("key2"))).isNull();
+
+    assertThat(table.mayExists(newSlice("key3"))).isTrue();
+    assertThat(getBytes(table.get(newSlice("key3")))).isEqualTo("value4".getBytes());
+
+    assertThat(table.mayExists(newSlice("key123"))).isFalse();
+    assertThat(table.get(newSlice("key123"))).isNull();
+  }
 
   @Test
   public void testHappy() throws IOException {
@@ -68,6 +93,20 @@ public class CppTableCompatTest {
 
   private static Slice newSlice(byte[] bytes) {
     return ByteBufferSlice.FACTORY.wrap(bytes, 0, bytes.length);
+  }
+
+  private static Slice newSlice(String v) {
+    return newSlice(v.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static void assertEquals(Slice a, Slice b) {
+    assertThat(equals(a, b)).isTrue();
+  }
+
+  private static byte[] getBytes(Slice slice) {
+    byte[] sink = new byte[slice.len()];
+    slice.newReader().getBytes(sink, 0, slice.len());
+    return sink;
   }
 
   private static boolean equals(Slice a, Slice b) {
