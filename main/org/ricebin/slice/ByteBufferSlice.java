@@ -210,7 +210,7 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
 
   private static final ByteBufferSlice EMPTY = new ByteBufferSlice(allocate(0), 0, 0);
 
-  public static final Factory FACTORY = new Factory<ByteBufferSlice>() {
+  public static final Factory<ByteBufferSlice> FACTORY = new Factory<ByteBufferSlice>() {
 
     @Override
     public ByteBufferSlice readFully(FileChannel src, long pos, int len) throws IOException {
@@ -249,7 +249,7 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
   };
 
-  private static class SinkImpl implements Sink {
+  private static class SinkImpl implements Sink<ByteBufferSlice> {
 
     ByteBuffer sink;
     final AtomicBoolean finished = new AtomicBoolean(false);
@@ -264,20 +264,20 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
 
     @Override
-    public Sink putByte(byte value) {
+    public Sink<ByteBufferSlice> putByte(byte value) {
       sink.put(value);
       return this;
     }
 
     @Override
-    public Sink putInt(int value) {
+    public Sink<ByteBufferSlice> putInt(int value) {
       sink.putInt(value);
       return this;
     }
 
     // https://github.com/google/leveldb/blob/f57513a1d6c99636fc5b710150d0b93713af4e43/util/coding.cc#L21
     @Override
-    public Sink putVarInt(int v) {
+    public Sink<ByteBufferSlice> putVarInt(int v) {
       if (v < 0) {
         throw new UnsupportedOperationException();
       } else if (v < (1 << 7)) {
@@ -306,7 +306,7 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
 
     // https://github.com/google/leveldb/blob/f57513a1d6c99636fc5b710150d0b93713af4e43/util/coding.cc#L55
     @Override
-    public Sink putVarLong(long v) {
+    public Sink<ByteBufferSlice> putVarLong(long v) {
       if (v < 0) {
         throw new UnsupportedOperationException();
       }
@@ -319,13 +319,13 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
 
     @Override
-    public Sink putLong(long value) {
+    public Sink<ByteBufferSlice> putLong(long value) {
       sink.putLong(value);
       return this;
     }
 
     @Override
-    public Sink putSlice(Slice slice) {
+    public Sink<ByteBufferSlice> putSlice(Slice slice) {
       slice.put(sink);
       return this;
     }
@@ -346,7 +346,7 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
   }
 
-  private static class DynamicReusableSinkImpl extends SinkImpl implements ReusableSink {
+  private static class DynamicReusableSinkImpl extends SinkImpl implements ReusableSink<ByteBufferSlice> {
 
     DynamicReusableSinkImpl(int initialSize) {
       super(initialSize);
@@ -364,37 +364,37 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
 
     @Override
-    public Sink putByte(byte value) {
+    public Sink<ByteBufferSlice> putByte(byte value) {
       ensureSpace(1);
       return super.putByte(value);
     }
 
     @Override
-    public Sink putInt(int value) {
+    public Sink<ByteBufferSlice> putInt(int value) {
       ensureSpace(SIZE_OF_INT);
       return super.putInt(value);
     }
 
     @Override
-    public Sink putVarInt(int value) {
+    public Sink<ByteBufferSlice> putVarInt(int value) {
       ensureSpace(MAX_VAR_INT_32_SIZE);
       return super.putVarInt(value);
     }
 
     @Override
-    public Sink putLong(long value) {
+    public Sink<ByteBufferSlice> putLong(long value) {
       ensureSpace(SIZE_OF_LONG);
       return super.putLong(value);
     }
 
     @Override
-    public Sink putVarLong(long value) {
+    public Sink<ByteBufferSlice> putVarLong(long value) {
       ensureSpace(MAX_VAR_INT_64_SIZE);
       return super.putVarLong(value);
     }
 
     @Override
-    public Sink putSlice(Slice slice) {
+    public Sink<ByteBufferSlice> putSlice(Slice slice) {
       ensureSpace(slice.len());
       return super.putSlice(slice);
     }
