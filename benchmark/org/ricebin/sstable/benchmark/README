@@ -1,0 +1,6 @@
+bazel build benchmark/org/ricebin/sstable/benchmark:random_get_benchmark_runner
+bazel-bin/benchmark/org/ricebin/sstable/benchmark/random_get_benchmark_runner -rf=json
+
+try
+https://jmh.morethan.io/
+
