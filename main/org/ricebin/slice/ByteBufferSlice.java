@@ -96,6 +96,11 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     return new ReaderImpl(shallowCopy(), offset);
   }
 
+  @Override
+  public ByteBuffer asByteBuffer() {
+    return shallowCopy();
+  }
+
   private ByteBuffer shallowCopy() {
     return duplicate(buf)
         .position(offset)
@@ -193,14 +198,6 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     }
 
     @Override
-    public void write(FileChannel dst) throws IOException {
-      dst.write(buf);
-      if (buf.hasRemaining()) {
-        throw new IllegalStateException("still have unwritten bytes");
-      }
-    }
-
-    @Override
     public long getLong() {
       return buf.getLong();
     }
@@ -215,25 +212,15 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     return new ByteBufferSlice(ByteBuffer.wrap(buf), offset, length);
   }
 
-  public static ByteBufferSlice wrap(ByteBuffer buf) {
-    return new ByteBufferSlice(buf, 0, buf.limit());
+  static ByteBufferSlice wrap(ByteBuffer buf) {
+    int len = buf.limit() - buf.position();
+    return new ByteBufferSlice(buf, buf.position(), len);
   }
-
 
   private static final ByteBufferSlice EMPTY = new ByteBufferSlice(allocate(0), 0, 0);
 
   public static final Factory<ByteBufferSlice> FACTORY = new Factory<ByteBufferSlice>() {
 
-    @Override
-    public ByteBufferSlice readFully(FileChannel src, long pos, int len) throws IOException {
-      ByteBuffer buf = allocate(len);
-      int bytesRead = src.read(buf, pos);
-      if (bytesRead != len) {
-        throw new IllegalStateException("unable to read all bytes");
-      }
-      buf.flip();
-      return ByteBufferSlice.wrap(buf);
-    }
 
     @Override
     public Sink<ByteBufferSlice> newFixedSizeSink(int size) {
@@ -243,6 +230,11 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
     @Override
     public ReusableSink<ByteBufferSlice> newDynamicSink(int initialSize) {
       return new DynamicReusableSinkImpl(initialSize);
+    }
+
+    @Override
+    public ByteBufferSlice wrap(ByteBuffer buf) {
+      return ByteBufferSlice.wrap(buf);
     }
 
     @Override
@@ -349,7 +341,6 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
       }
       sink.flip();
       return ByteBufferSlice.wrap(sink);
-
     }
 
     @Override
@@ -426,7 +417,7 @@ public class ByteBufferSlice implements Slice, Comparable<ByteBufferSlice> {
   }
 
   static ByteBuffer duplicate(ByteBuffer buf) {
-    return buf.duplicate().order(ByteOrder.LITTLE_ENDIAN);
+    return buf.asReadOnlyBuffer().order(ByteOrder.LITTLE_ENDIAN);
   }
 
 }

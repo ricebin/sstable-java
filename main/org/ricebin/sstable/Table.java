@@ -3,6 +3,7 @@ package org.ricebin.sstable;
 import com.google.common.collect.Iterators;
 import com.google.common.primitives.Ints;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
@@ -145,8 +146,10 @@ public class Table {
 
         BlockHandle filterBlockHandle = BlockHandle.decode(data.newReader());
 
-        Slice filterBlockData = sliceFactory
+        ByteBuffer blockBuf = SliceUtils
             .readFully(fileChannel, filterBlockHandle.getOffset(), filterBlockHandle.getSize());
+
+        Slice filterBlockData = sliceFactory.wrap(blockBuf);
 
         return FilterBlock.newInstance(filterBlockData, filterPolicy);
       }
@@ -160,21 +163,28 @@ public class Table {
 
     // read block trailer
     long trailerStart = blockHandle.getOffset() + blockHandle.getSize();
-    Slice trailerSlice = sliceFactory
-        .readFully(fileChannel, trailerStart, BlockTrailer.MAX_ENCODED_LENGTH);
+    Slice trailerSlice = sliceFactory.wrap(
+        SliceUtils.readFully(fileChannel, trailerStart, BlockTrailer.MAX_ENCODED_LENGTH));
 
     BlockTrailer trailer = BlockTrailer.decode(trailerSlice);
     // TODO(ricebin): verify checksum from trailer
 
-    Slice dataSlice = sliceFactory
+    ByteBuffer blockBuf = SliceUtils
         .readFully(fileChannel, blockHandle.getOffset(), blockHandle.getSize());
+
+    Compressor compressor = trailer.getCompressionType().getCompressor();
+    ByteBuffer uncompressed = compressor.uncompress(blockBuf);
+
+    Slice dataSlice = sliceFactory.wrap(uncompressed);
+
     return new PrefixBlock<V>(sliceFactory, dataSlice, sliceFactory.comparator(), valueDecoder);
   }
 
   static Footer readFooter(Slice.Factory sliceFactory, FileChannel fileChannel) throws IOException {
     int size = Ints.checkedCast(fileChannel.size());
     long footerOffset = size - Footer.MAX_ENCODED_LENGTH;
-    Slice slice = sliceFactory.readFully(fileChannel, footerOffset, Footer.MAX_ENCODED_LENGTH);
+    Slice slice = sliceFactory.wrap(
+        SliceUtils.readFully(fileChannel, footerOffset, Footer.MAX_ENCODED_LENGTH));
     return Footer.decode(slice);
   }
 

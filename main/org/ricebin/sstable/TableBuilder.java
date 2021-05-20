@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.ricebin.slice.Slice;
@@ -61,7 +62,8 @@ public class TableBuilder {
 
   private BlockHandle writeBlock(BlockBuilder blockBuilder) throws IOException {
     // close the block
-    Slice blockBuffer = blockBuilder.finish();
+    ByteBuffer blockBuffer = blockBuilder.finish().asByteBuffer();
+    ByteBuffer compressed = compressionType.getCompressor().compress(blockBuffer);
 
     // TODO(ricebin): compress the block
 
@@ -74,14 +76,12 @@ public class TableBuilder {
 
     // create a handle to this block
     long pos = fileChannel.position();
-    BlockHandle blockHandle = new BlockHandle(pos, blockBuffer.len());
-
-    blockBuffer.newReader().write(fileChannel);
-    trailerBuf.newReader().write(fileChannel);
+    int dataBlockLen = writeFully(compressed);
+    writeFully(trailerBuf.asByteBuffer());
 
     blockBuilder.reset();
 
-    return blockHandle;
+    return new BlockHandle(pos, dataBlockLen);
   }
 
   private void flush() throws IOException {
@@ -121,6 +121,14 @@ public class TableBuilder {
     // write footer
     Footer footer = new Footer(metaIndexBlockHandle, indexBlockHandle);
     Slice footerBuf = Footer.encode(footer, sliceFactory);
-    footerBuf.newReader().write(fileChannel);
+    writeFully(footerBuf.asByteBuffer());
+  }
+
+  int writeFully(ByteBuffer buf) throws IOException {
+    int written = fileChannel.write(buf);
+    if (buf.hasRemaining()) {
+      throw new IllegalStateException("still have unwritten bytes");
+    }
+    return written;
   }
 }

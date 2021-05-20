@@ -33,6 +33,8 @@ public interface Slice {
 
   Reader newReader();
 
+  ByteBuffer asByteBuffer();
+
 
   interface Reader {
 
@@ -60,16 +62,15 @@ public interface Slice {
 
     void getBytes(byte[] sink, int sinkOffset, int len);
 
-    void write(FileChannel dst) throws IOException;
   }
 
   interface Factory<T extends Slice> {
 
-    T readFully(FileChannel src, long pos, int len) throws IOException;
-
     Sink<T> newFixedSizeSink(int size);
 
     ReusableSink<T> newDynamicSink(int initialSize);
+
+    T wrap(ByteBuffer buf);
 
     T wrap(byte[] buf, int offset, int len);
 
