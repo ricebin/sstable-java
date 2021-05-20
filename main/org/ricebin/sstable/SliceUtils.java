@@ -28,4 +28,8 @@ class SliceUtils {
     buf.flip();
     return buf;
   }
+
+  static ByteBuffer duplicate(ByteBuffer buf) {
+    return buf.asReadOnlyBuffer().order(ByteOrder.LITTLE_ENDIAN);
+  }
 }

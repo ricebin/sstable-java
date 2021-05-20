@@ -1,5 +1,6 @@
 package org.ricebin.sstable;
 
+import java.nio.ByteBuffer;
 import org.ricebin.slice.Slice;
 import org.ricebin.slice.Slice.Factory.Sink;
 import org.ricebin.slice.Slice.Reader;
@@ -18,10 +19,9 @@ class BlockTrailer {
     this.crc32c = crc32c;
   }
 
-  static BlockTrailer decode(Slice input) {
-    Reader reader = input.newReader();
-    CompressionType compressionType = CompressionType.decode(reader.getByte());
-    int crc32c = reader.getInt();
+  static BlockTrailer decode(ByteBuffer input) {
+    CompressionType compressionType = CompressionType.decode(input.get());
+    int crc32c = input.getInt();
     return new BlockTrailer(compressionType, crc32c);
   }
 

@@ -161,19 +161,17 @@ public class Table {
       Slice.Factory sliceFactory, FileChannel fileChannel, BlockHandle blockHandle,
       Function<Slice, V> valueDecoder) throws IOException {
 
-    // read block trailer
-    long trailerStart = blockHandle.getOffset() + blockHandle.getSize();
-    Slice trailerSlice = sliceFactory.wrap(
-        SliceUtils.readFully(fileChannel, trailerStart, BlockTrailer.MAX_ENCODED_LENGTH));
+    // read block data + trailer
+    ByteBuffer dataAndTrailer = SliceUtils.readFully(fileChannel,
+        blockHandle.getOffset(),
+        blockHandle.getSize() + BlockTrailer.MAX_ENCODED_LENGTH);
 
-    BlockTrailer trailer = BlockTrailer.decode(trailerSlice);
-    // TODO(ricebin): verify checksum from trailer
+    BlockTrailer blockTrailer = BlockTrailer.decode(
+        SliceUtils.duplicate(dataAndTrailer).position(blockHandle.getSize()));
 
-    ByteBuffer blockBuf = SliceUtils
-        .readFully(fileChannel, blockHandle.getOffset(), blockHandle.getSize());
-
-    Compressor compressor = trailer.getCompressionType().getCompressor();
-    ByteBuffer uncompressed = compressor.uncompress(blockBuf);
+    Compressor compressor = blockTrailer.getCompressionType().getCompressor();
+    ByteBuffer raw = dataAndTrailer.limit(blockHandle.getSize());
+    ByteBuffer uncompressed = compressor.uncompress(raw);
 
     Slice dataSlice = sliceFactory.wrap(uncompressed);
 
