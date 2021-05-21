@@ -2,9 +2,10 @@ package org.ricebin.sstable;
 
 import com.google.common.collect.Iterators;
 import com.google.common.primitives.Ints;
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
@@ -14,7 +15,7 @@ import org.ricebin.slice.Slice;
 
 public class Table {
 
-  private final FileChannel fileChannel;
+  private final ReadOnlyFile inputFile;
   private final Slice.Factory sliceFactory;
 
   private final Block<BlockHandle> blockIndex;
@@ -22,18 +23,18 @@ public class Table {
   final FilterBlock filterBlock;
 
   Table(
-      FileChannel fileChannel,
+      ReadOnlyFile inputFile,
       Slice.Factory sliceFactory,
       Block<BlockHandle> blockIndex,
       FilterBlock filterBlock) {
-    this.fileChannel = fileChannel;
+    this.inputFile = inputFile;
     this.sliceFactory = sliceFactory;
     this.blockIndex = blockIndex;
     this.filterBlock = filterBlock;
     this.getBlock =
         blockHandle -> {
           try {
-            return readBlock(sliceFactory, fileChannel, blockHandle, s -> s);
+            return readBlock(sliceFactory, inputFile, blockHandle, s -> s);
           } catch (IOException e) {
             throw new RuntimeException(e);
           }
@@ -63,7 +64,7 @@ public class Table {
       return null;
     }
 
-    PrefixBlock<Slice> valueBlock = readBlock(sliceFactory, fileChannel, valueBlockHandle, s -> s);
+    PrefixBlock<Slice> valueBlock = readBlock(sliceFactory, inputFile, valueBlockHandle, s -> s);
     Iterator<Entry<Slice, Slice>> valueIt = valueBlock.iterator(key);
     if (valueIt.hasNext()) {
       Entry<Slice, Slice> next = valueIt.next();
@@ -88,34 +89,43 @@ public class Table {
             e -> getBlock.apply(e.getValue()).iterator()));
   }
 
-  public static Table open(
-      FileChannel fileChannel,
+  public static Table openWithoutFilter(
+      File file,
       Slice.Factory sliceFactory) throws IOException {
-    return open(null, fileChannel, sliceFactory);
+    return open(file, null, sliceFactory);
+  }
+
+
+  public static Table open(
+      File file,
+      FilterPolicy.Reader filterPolicy,
+      Slice.Factory sliceFactory) throws IOException {
+    RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+    return open(filterPolicy, new FileChannelReadOnlyFile(randomAccessFile.getChannel()), sliceFactory);
   }
 
   public static Table open(
       FilterPolicy.Reader filterPolicy,
-      FileChannel fileChannel,
+      ReadOnlyFile inputFile,
       Slice.Factory sliceFactory) throws IOException {
-    Footer footer = readFooter(sliceFactory, fileChannel);
+    Footer footer = readFooter(sliceFactory, inputFile);
 
     PrefixBlock<BlockHandle> blockIndex = readBlock(
         sliceFactory,
-        fileChannel, footer.getIndex(),
+        inputFile, footer.getIndex(),
         valueSlice -> BlockHandle.decode(valueSlice.newReader()));
 
     FilterBlock filterBlock;
     if (filterPolicy != null) {
 
       // https://github.com/google/leveldb/blob/f57513a1d6c99636fc5b710150d0b93713af4e43/table/table.cc#L82
-      filterBlock = readFilterBlock(sliceFactory, filterPolicy, fileChannel, footer.getMetaIndex());
+      filterBlock = readFilterBlock(sliceFactory, filterPolicy, inputFile, footer.getMetaIndex());
     } else {
       filterBlock = null;
     }
 
     return new Table(
-        fileChannel,
+        inputFile,
         sliceFactory,
         blockIndex,
         filterBlock);
@@ -124,12 +134,12 @@ public class Table {
   static FilterBlock readFilterBlock(
       Slice.Factory sliceFactory,
       FilterPolicy.Reader filterPolicy,
-      FileChannel fileChannel,
+      ReadOnlyFile file,
       BlockHandle metaIndexBlockHandle)
       throws IOException {
     PrefixBlock<Slice> metaIndex = readBlock(
         sliceFactory,
-        fileChannel,
+        file,
         metaIndexBlockHandle,
         s -> s
     );
@@ -146,8 +156,7 @@ public class Table {
 
         BlockHandle filterBlockHandle = BlockHandle.decode(data.newReader());
 
-        ByteBuffer blockBuf = SliceUtils
-            .readFully(fileChannel, filterBlockHandle.getOffset(), filterBlockHandle.getSize());
+        ByteBuffer blockBuf = file.readFully(filterBlockHandle.getOffset(), filterBlockHandle.getSize());
 
         Slice filterBlockData = sliceFactory.wrap(blockBuf);
 
@@ -158,11 +167,11 @@ public class Table {
   }
 
   static <V> PrefixBlock<V> readBlock(
-      Slice.Factory sliceFactory, FileChannel fileChannel, BlockHandle blockHandle,
+      Slice.Factory sliceFactory, ReadOnlyFile file, BlockHandle blockHandle,
       Function<Slice, V> valueDecoder) throws IOException {
 
     // read block data + trailer
-    ByteBuffer dataAndTrailer = SliceUtils.readFully(fileChannel,
+    ByteBuffer dataAndTrailer = file.readFully(
         blockHandle.getOffset(),
         blockHandle.getSize() + BlockTrailer.MAX_ENCODED_LENGTH);
 
@@ -178,15 +187,15 @@ public class Table {
     return new PrefixBlock<V>(sliceFactory, dataSlice, sliceFactory.comparator(), valueDecoder);
   }
 
-  static Footer readFooter(Slice.Factory sliceFactory, FileChannel fileChannel) throws IOException {
-    int size = Ints.checkedCast(fileChannel.size());
+  static Footer readFooter(Slice.Factory sliceFactory, ReadOnlyFile file) throws IOException {
+    int size = Ints.checkedCast(file.size());
     long footerOffset = size - Footer.MAX_ENCODED_LENGTH;
     Slice slice = sliceFactory.wrap(
-        SliceUtils.readFully(fileChannel, footerOffset, Footer.MAX_ENCODED_LENGTH));
+        file.readFully(footerOffset, Footer.MAX_ENCODED_LENGTH));
     return Footer.decode(slice);
   }
 
   public void close() throws IOException {
-    fileChannel.close();
+    inputFile.close();
   }
 }

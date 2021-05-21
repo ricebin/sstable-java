@@ -19,16 +19,6 @@ class SliceUtils {
     return minLength;
   }
 
-  static ByteBuffer readFully(FileChannel src, long pos, int len) throws IOException {
-    ByteBuffer buf = ByteBuffer.allocate(len).order(ByteOrder.LITTLE_ENDIAN);
-    int bytesRead = src.read(buf, pos);
-    if (bytesRead != len) {
-      throw new IllegalStateException("unable to read all bytes");
-    }
-    buf.flip();
-    return buf;
-  }
-
   static ByteBuffer duplicate(ByteBuffer buf) {
     return buf.asReadOnlyBuffer().order(ByteOrder.LITTLE_ENDIAN);
   }

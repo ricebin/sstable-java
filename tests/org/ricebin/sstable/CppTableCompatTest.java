@@ -4,6 +4,7 @@ package org.ricebin.sstable;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.Iterators;
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -25,11 +26,12 @@ public class CppTableCompatTest {
 
   @Test
   public void testWithFilter() throws Exception {
-    RandomAccessFile file = new RandomAccessFile(
-        "tests/org/ricebin/sstable/testfiles/testWithFilter.sst", "r");
-    FileChannel fc = file.getChannel();
-
-    Table table = Table.open(BloomFilterPolicy.LEVELDB_BUILTIN_BLOOM_FILTER2.getReader(), fc, ByteBufferSlice.FACTORY);
+    String fileName =
+        "tests/org/ricebin/sstable/testfiles/testWithFilter.sst";
+    Table table = Table.open(
+        new File(fileName),
+        BloomFilterPolicy.LEVELDB_BUILTIN_BLOOM_FILTER2.getReader(),
+        ByteBufferSlice.FACTORY);
 
     assertThat(getBytes(table.filterBlock.blockContent))
         .isEqualTo(new byte[]{0, 8, 64, 2, 16, 0, 4, 32, 6, 0, 0, 0, 0, 9, 0, 0, 0, 11});
@@ -48,7 +50,7 @@ public class CppTableCompatTest {
   }
 
   @Test
-  public void testHappy() throws IOException {
+  public void test_openWithoutFilter() throws IOException {
     Slice firstKey = newSlice(
         new byte[]{48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 1, 1, 0, 0, 0, 0,
             0, 0});
@@ -56,11 +58,8 @@ public class CppTableCompatTest {
         new byte[]{48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 52, 50, 1, 43, 0, 0, 0,
             0, 0, 0});
 
-    RandomAccessFile file = new RandomAccessFile(
-        "tests/org/ricebin/sstable/testfiles/000005.sst", "r");
-    FileChannel fc = file.getChannel();
-
-    Table table = Table.open(fc, ByteBufferSlice.FACTORY);
+    String filename = "tests/org/ricebin/sstable/testfiles/000005.sst";
+    Table table = Table.openWithoutFilter(new File(filename), ByteBufferSlice.FACTORY);
     {
       Iterator<Entry<Slice, Slice>> it = table.iterator();
       assertThat(it.hasNext()).isTrue();

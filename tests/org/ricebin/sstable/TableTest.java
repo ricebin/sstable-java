@@ -20,7 +20,7 @@ import org.ricebin.slice.Slice;
 
 public class TableTest {
 
-  private static final Slice.Factory SLICE_FACTORY = ByteBufferSlice.FACTORY;
+  private static final Slice.Factory<ByteBufferSlice> SLICE_FACTORY = ByteBufferSlice.FACTORY;
 
   @Rule
   public final TemporaryFolder tempDir = new TemporaryFolder();
@@ -56,8 +56,7 @@ public class TableTest {
   }
 
   private Table readTable(File file) throws IOException {
-    RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
-    return Table.open(randomAccessFile.getChannel(), SLICE_FACTORY);
+    return Table.openWithoutFilter(file, SLICE_FACTORY);
   }
 
   private File writeTable(ImmutableMap<String, String> input) throws IOException {

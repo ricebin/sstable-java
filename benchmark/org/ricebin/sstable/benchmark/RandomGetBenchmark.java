@@ -1,5 +1,6 @@
 package org.ricebin.sstable.benchmark;
 
+import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -28,12 +29,11 @@ public class RandomGetBenchmark {
     @Setup(Level.Trial)
     public void setUpTrial() throws Exception {
       random = new Random();
-      RandomAccessFile file = new RandomAccessFile(
-          "benchmark/org/ricebin/sstable/benchmark/testfiles/000005.sst", "r");
-      FileChannel fc = file.getChannel();
+      String filename =
+          "benchmark/org/ricebin/sstable/benchmark/testfiles/000005.sst";
 
 //      table = Table.open(fc, ByteBufferSlice.FACTORY);
-      table = Table.open(BloomFilterPolicy.LEVELDB_BUILTIN_BLOOM_FILTER2.getReader(), fc, ByteBufferSlice.FACTORY);
+      table = Table.open(new File(filename), BloomFilterPolicy.LEVELDB_BUILTIN_BLOOM_FILTER2.getReader(), ByteBufferSlice.FACTORY);
     }
 
     @TearDown
@@ -46,7 +46,7 @@ public class RandomGetBenchmark {
 //      byte[] sampleKey = new byte[]{
 //          48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 51, 51, 55, 49};
       int fullkeySize = 24;
-      Sink keySink = ByteBufferSlice.FACTORY.newFixedSizeSink(24 + 4);
+      Sink<ByteBufferSlice> keySink = ByteBufferSlice.FACTORY.newFixedSizeSink(24 + 4);
       for (int i = 0; i < 10; i++) {
         keySink.putByte((byte) 48);
       }
